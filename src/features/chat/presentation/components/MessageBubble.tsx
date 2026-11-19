@@ -1,12 +1,21 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { Message } from '../../domain/entities/Message';
 
-interface Props { message: Message; }
+interface Props {
+  message: Message;
+  isSpeaking?: boolean;
+  onToggleSpeak?: () => void;
+}
 
-export const MessageBubble: React.FC<Props> = ({ message }) => {
+export const MessageBubble: React.FC<Props> = ({
+  message,
+  isSpeaking = false,
+  onToggleSpeak,
+}) => {
   const isUser = message.role === 'user';
+
   return (
     <View style={[styles.container, isUser ? styles.userContainer : styles.aiContainer]}>
       <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
@@ -16,11 +25,23 @@ export const MessageBubble: React.FC<Props> = ({ message }) => {
           <Markdown style={markdownStyles}>{message.content}</Markdown>
         )}
       </View>
-      <Text style={styles.timestamp}>
-        {message.timestamp.toLocaleTimeString('es-EC', {
-          hour: '2-digit', minute: '2-digit',
-        })}
-      </Text>
+
+      <View style={styles.footer}>
+        <Text style={styles.timestamp}>
+          {message.timestamp.toLocaleTimeString('es-EC', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </Text>
+
+        {!isUser && onToggleSpeak && (
+          <TouchableOpacity onPress={onToggleSpeak} style={styles.speakBtn}>
+            <Text style={styles.speakText}>
+              {isSpeaking ? '⏹️ Detener' : '🔊 Escuchar'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 };
@@ -62,11 +83,14 @@ const markdownStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   container: { marginVertical: 4, marginHorizontal: 12, maxWidth: '80%' },
   userContainer: { alignSelf: 'flex-end', alignItems: 'flex-end' },
-  aiContainer:  { alignSelf: 'flex-start', alignItems: 'flex-start' },
-  bubble:       { borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10 },
-  userBubble:   { backgroundColor: '#2563EB', borderBottomRightRadius: 4 },
-  aiBubble:     { backgroundColor: '#F1F5F9', borderBottomLeftRadius: 4 },
-  text:         { fontSize: 15, lineHeight: 21 },
-  userText:     { color: '#FFFFFF' },
-  timestamp:    { fontSize: 10, color: '#94A3B8', marginTop: 2 },
+  aiContainer: { alignSelf: 'flex-start', alignItems: 'flex-start' },
+  bubble: { borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10 },
+  userBubble: { backgroundColor: '#2563EB', borderBottomRightRadius: 4 },
+  aiBubble: { backgroundColor: '#F1F5F9', borderBottomLeftRadius: 4 },
+  text: { fontSize: 15, lineHeight: 21 },
+  userText: { color: '#FFFFFF' },
+  footer: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
+  timestamp: { fontSize: 10, color: '#94A3B8' },
+  speakBtn: { paddingVertical: 2, paddingHorizontal: 6 },
+  speakText: { fontSize: 12, color: '#2563EB', fontWeight: '500' },
 });

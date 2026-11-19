@@ -2,11 +2,13 @@ import React, { useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
-    KeyboardAvoidingView, Platform,
+    KeyboardAvoidingView,
+    Platform,
     StyleSheet,
     Text,
-    TextInput, TouchableOpacity,
-    View
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MessageBubble } from '../components/MessageBubble';
@@ -15,7 +17,17 @@ import { useChat } from '../hooks/useChat';
 export const ChatScreen: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
-  const { messages, isLoading, error, sendMessage, clearChat } = useChat();
+  const {
+    messages,
+    isLoading,
+    error,
+    isVoiceEnabled,
+    speakingMessageId,
+    sendMessage,
+    clearChat,
+    speakMessage,
+    toggleVoice,
+  } = useChat();
 
   const handleSend = async () => {
     if (!inputText.trim() || isLoading) return;
@@ -28,32 +40,50 @@ export const ChatScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Chat con Gemini</Text>
-        <TouchableOpacity onPress={clearChat} style={styles.clearBtn}>
-          <Text style={styles.clearText}>Limpiar</Text>
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Chat con ChatGPT</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={toggleVoice} style={styles.voiceBtn}>
+            <Text style={styles.voiceText}>
+              {isVoiceEnabled ? '🔊 Voz' : '🔇 Silencio'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={clearChat} style={styles.clearBtn}>
+            <Text style={styles.clearText}>Limpiar</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <KeyboardAvoidingView style={styles.flex}
+
+      <KeyboardAvoidingView
+        style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <FlatList
           ref={flatListRef}
           data={messages}
           keyExtractor={item => item.id}
-          renderItem={({ item }) => <MessageBubble message={item} />}
+          renderItem={({ item }) => (
+            <MessageBubble
+              message={item}
+              isSpeaking={speakingMessageId === item.id}
+              onToggleSpeak={() => speakMessage(item)}
+            />
+          )}
           contentContainerStyle={styles.messagesList}
         />
+
         {isLoading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size='small' color='#2563EB' />
-            <Text style={styles.loadingText}>Gemini está escribiendo...</Text>
+            <Text style={styles.loadingText}>Chatgpt está escribiendo...</Text>
           </View>
         )}
+
         {error && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
+
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
@@ -64,8 +94,10 @@ export const ChatScreen: React.FC = () => {
             onSubmitEditing={handleSend}
           />
           <TouchableOpacity
-            style={[styles.sendButton,
-              (!inputText.trim() || isLoading) && styles.sendButtonDisabled]}
+            style={[
+              styles.sendButton,
+              (!inputText.trim() || isLoading) && styles.sendButtonDisabled,
+            ]}
             onPress={handleSend}
             disabled={!inputText.trim() || isLoading}
           >
@@ -91,6 +123,14 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E5E7EB',
   },
   headerTitle: { fontSize: 18, fontWeight: '600', color: '#111827' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  voiceBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 12,
+  },
+  voiceText: { color: '#2563EB', fontSize: 13, fontWeight: '600' },
   clearBtn: { paddingHorizontal: 12, paddingVertical: 6 },
   clearText: { color: '#EF4444', fontSize: 14 },
   messagesList: { padding: 16, paddingBottom: 8 },
